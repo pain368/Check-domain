@@ -1,75 +1,63 @@
-
+import time
 import requests
-import sys
 from bs4 import BeautifulSoup
 import re
-import json
-import subprocess
+import concurrent.futures
+import sys
 
-fileInputLink = []
-jsonArray = []
-respStatus = ["OK", "ERROR"]
-
-if __name__ == "__main__":
-
-    try:
-
-        fileInputLink = open(sys.argv[1], "r").readlines()
-
-        for linkCounter in range(0, len(fileInputLink)):
-
-            #Request Header
-            req = requests.head(fileInputLink[linkCounter].strip("\n"))
-
-            if req.status_code == 200:
-
-                # Parse URL through RegEx
-                rec = re.compile(r"https?://(www\.)?")
-                o = rec.sub('', fileInputLink[linkCounter])
-
-                # Make request to who.is - Get /https://who.is/whois/onet.pl
-                reqWhoIs = requests.get("https://who.is/whois/{}".format(o.strip("\n")))
-
-                # Parse document HTML from reqWhoIs
-                soup = BeautifulSoup(reqWhoIs.text, "html.parser")
-                tag = str(soup.find_all("pre"))
-                whoIsData = tag.split("\r\n")
-
-                # Display info
-                print("[OK] {}".format(fileInputLink[linkCounter]), end="")
-
-                stringPosition = 0
-
-                for countLine in range(0, len(whoIsData)):
-                    stringPosition = stringPosition + 1
-
-                    # If find REGISTRAR in string
-                    if (whoIsData[countLine].find("REGISTRAR")) == 0:
-                        print(whoIsData[stringPosition])
-                        jsonArray.append(json.dumps({fileInputLink[linkCounter].strip("\n"):
-                                                         [respStatus[0], whoIsData[stringPosition]]}))
-
-                    elif whoIsData[countLine].find("Registrar") == 0:
-                        print(whoIsData[stringPosition])
-                        jsonArray.append(json.dumps({fileInputLink[linkCounter].strip("\n"):
-                                                         [respStatus[0], whoIsData[stringPosition]]}))
-
-            elif req.status_code >= 400:
-                print("[Error] {}".format(fileInputLink[linkCounter]))
-
-            else:
-                print("[CHECK MANUALLY] {}".format(fileInputLink[linkCounter]))
+def make_request(domainName):
+    url = domainName.strip("\n")
+    requestResult = requests.head(url)
+    print("[*]{} -> response code:{}\n".format(url, requestResult.status_code))
+    return url, requestResult.status_code
 
 
-    except BaseException as error:
-        print("[!]{}".format(error))
+def getWhoIsResponse(data):
+    pattern = r"https?://(www\.)?"
+    urlFromFile = re.compile(str(pattern))
+    rightUrl = urlFromFile.sub("", str(data))
+    ss = requests.get("https://who.is/whois/{}".format(rightUrl.strip("\n")))
+    soup = BeautifulSoup(ss.text, "html.parser")
+    tag = str(soup.find_all("pre"))
+    whoIsData = tag.split("\r\n")
+
+    return whoIsData
 
 
+def start(function, data):
+    result = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8)as execute:
+        future_url = {execute.submit(function, urlfromTable): urlfromTable for urlfromTable in data}
+
+        for future in concurrent.futures.as_completed(future_url):
+            url = future_url[future]
+            try:
+                result.append(future.result())
+            except Exception as exc:
+                print('%r generated an exception: %s' % (url, exc))
+    return result
 
 
+start1 = time.time()
 
 
+def __main__():
+    fileInputLink = open(sys.argv[1], "r").readlines()
+    data = start(make_request, fileInputLink)
+    generalTab = []
+
+    for i in range(len(data)):
+        whoisdata = []
+        if data[i][1] == 200 or 301:
+            whoisdata.append(getWhoIsResponse(data[i][0]))
+        generalTab.append(whoisdata)
+
+    pureData = []
+    for i in range(len(generalTab)):
+        pureData.append([(generalTab[i][0][0].split(":")[2].strip(" ")), generalTab[i][0][2:4]])
+
+    for i in range(len(pureData)):
+        print("".join(str(pureData[i])))
 
 
-
-
+__main__()
