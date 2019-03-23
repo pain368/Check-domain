@@ -1,28 +1,18 @@
-import subprocess
-import time
+
 import concurrent.futures
 import subprocess
-from concurrent import futures
-
-domainUrl = [
-    "www.google.pl",
-    "www.se.pl",
-    "www.sekurak.pl",
-    "www.fakt.pl",
-    "www.ford.pl",
-    "www.interia.pl",
-    "www.bosch.pl",
-    "www.kobi.pl",
-    "www.kross.pl"]
+import sys
+from urllib.parse import urlparse
 
 
 def tracert(domainName, result):
     print("[*] {}".format(domainName))
-    array = subprocess.check_output(("traceroute", "{}".format(domainName)))
+    opt = urlparse(domainName.strip("\n"))
+    array = subprocess.check_output(("traceroute", "{}".format(opt.netloc)))
     result.append(array.decode("utf-8"))
 
 
-def trace():
+def trace(domainUrl):
     result = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=8)as execute:
         future_url = {execute.submit(tracert, url, result): url for url in domainUrl}
@@ -37,11 +27,10 @@ def trace():
 
 
 def __main__():
-    start = time.time()
 
     finallData = []
-
-    traceRouteReturnData = trace()
+    fileInputLink = open(sys.argv[1], "r").readlines()
+    traceRouteReturnData = trace(fileInputLink)
     toRewriteData = list(map(lambda y: y.split("\n"), filter(lambda x: x != None, traceRouteReturnData)))
 
     for row in range(0, len(toRewriteData)):
@@ -49,10 +38,6 @@ def __main__():
 
     for row in range(0, len(finallData)):
         rowLen = len(finallData[row])
-        print(finallData[row][0].split(" ")[2], finallData[row][rowLen - 3][3:])  # display data
-
-    end = time.time()
-    print(end - start)
-
+        print(finallData[row][0].split(" ")[2], "".join(str(finallData[row][rowLen - 3][3:])))
 
 __main__()
