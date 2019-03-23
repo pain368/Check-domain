@@ -1,8 +1,8 @@
-
 import concurrent.futures
 import subprocess
 import sys
 from urllib.parse import urlparse
+import json
 
 
 def tracert(domainName, result):
@@ -29,6 +29,8 @@ def trace(domainUrl):
 def __main__():
 
     finallData = []
+    jsonarray = {}
+
     fileInputLink = open(sys.argv[1], "r").readlines()
     traceRouteReturnData = trace(fileInputLink)
     toRewriteData = list(map(lambda y: y.split("\n"), filter(lambda x: x != None, traceRouteReturnData)))
@@ -39,5 +41,14 @@ def __main__():
     for row in range(0, len(finallData)):
         rowLen = len(finallData[row])
         print(finallData[row][0].split(" ")[2], "".join(str(finallData[row][rowLen - 3][3:])))
+        jsonarray[finallData[row][0].split(" ")[2]] = "".join(str(finallData[row][rowLen - 3][3:]))
+
+    # write data to file .json
+    with open("data.json", "w") as writeJson:
+
+        json.dump(jsonarray, writeJson)
+
+    writeJson.close()
+
 
 __main__()
