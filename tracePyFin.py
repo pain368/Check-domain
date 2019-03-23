@@ -7,9 +7,11 @@ import json
 
 def tracert(domainName, result):
     print("[*] {}".format(domainName))
+
     opt = urlparse(domainName.strip("\n"))
     array = subprocess.check_output(("traceroute", "{}".format(opt.netloc)))
-    result.append(array.decode("utf-8"))
+
+    return result.append(array.decode("utf-8"))
 
 
 def trace(domainUrl):
