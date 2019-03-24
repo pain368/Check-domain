@@ -79,5 +79,7 @@ def __main__():
     with open("whois.json", "w") as outfile:
         json.dump(finalData, outfile)
 
+    outfile.close()
+
 
 __main__()
