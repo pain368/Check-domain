@@ -1,12 +1,14 @@
-import time
 import requests
 from bs4 import BeautifulSoup
 import re
 import concurrent.futures
 import sys
+import json
 
 
 def make_request(domainName):
+
+
     url = domainName.strip("\n")
     requestResult = requests.head(url)
 
@@ -15,6 +17,7 @@ def make_request(domainName):
 
 
 def getWhoIsResponse(data):
+
     # Regex
     pattern = r"https?://(www\.)?"
     urlFromFile = re.compile(str(pattern))
@@ -55,7 +58,6 @@ def __main__():
 
         if data[i][1] == 200 or 301:
             generalTab.append(getWhoIsResponse(data[i][0]))
-    import json
 
     pos = 0
     finalData = {}
@@ -66,12 +68,13 @@ def __main__():
             if generalTab[i][j].find("REGISTRAR:") == 0:
                 pos = j
 
-                entity = generalTab[i][pos + 1].repgilace(" ", "")
+                value = generalTab[i][pos + 1].replace(" ", "")
                 key = generalTab[i][0].replace(" ", "")
 
-                finalData[key.strip("\r")] = entity.strip("\r")
+                finalData[key.strip("\r")] = value.strip("\r")
 
-    print(finalData)
+    for key,val in finalData.items():
+        print(key,val)
 
     with open("whois.json", "w") as outfile:
         json.dump(finalData, outfile)
