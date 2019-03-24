@@ -66,7 +66,7 @@ def __main__():
             if generalTab[i][j].find("REGISTRAR:") == 0:
                 pos = j
 
-                entity = generalTab[i][pos + 1].repgilace(" ", "")
+                entity = generalTab[i][pos + 1].replace(" ", "")
                 key = generalTab[i][0].replace(" ", "")
 
                 finalData[key.strip("\r")] = entity.strip("\r")
