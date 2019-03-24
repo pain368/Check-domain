@@ -8,7 +8,6 @@ import json
 
 def make_request(domainName):
 
-
     url = domainName.strip("\n")
     requestResult = requests.head(url)
 
@@ -49,6 +48,7 @@ def start(function, data):
 
 
 def __main__():
+
     fileInputLink = open(sys.argv[1], "r").readlines()
 
     data = start(make_request, fileInputLink)
@@ -66,15 +66,15 @@ def __main__():
 
         for j in range(len(generalTab[i])):
             if generalTab[i][j].find("REGISTRAR:") == 0:
-                pos = j
 
+                pos = j
                 value = generalTab[i][pos + 1].replace(" ", "")
                 key = generalTab[i][0].replace(" ", "")
 
                 finalData[key.strip("\r")] = value.strip("\r")
 
-    for key,val in finalData.items():
-        print(key,val)
+    for key, val in finalData.items():
+        print(key, val)
 
     with open("whois.json", "w") as outfile:
         json.dump(finalData, outfile)
