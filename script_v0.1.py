@@ -8,17 +8,21 @@ import sys
 def make_request(domainName):
     url = domainName.strip("\n")
     requestResult = requests.head(url)
-    print("[*]{} -> response code:{}\n".format(url, requestResult.status_code))
+    print("[*]{} -> response code: {}\n".format(url, requestResult.status_code))
     return url, requestResult.status_code
 
 
 def getWhoIsResponse(data):
+    # Regex
     pattern = r"https?://(www\.)?"
     urlFromFile = re.compile(str(pattern))
     rightUrl = urlFromFile.sub("", str(data))
+
+    # Request
     ss = requests.get("https://who.is/whois/{}".format(rightUrl.strip("\n")))
     soup = BeautifulSoup(ss.text, "html.parser")
     tag = str(soup.find_all("pre"))
+
     whoIsData = tag.split("\r\n")
 
     return whoIsData
@@ -38,10 +42,8 @@ def start(function, data):
     return result
 
 
-start1 = time.time()
-
-
 def __main__():
+
     fileInputLink = open(sys.argv[1], "r").readlines()
     data = start(make_request, fileInputLink)
     generalTab = []
@@ -52,12 +54,13 @@ def __main__():
             whoisdata.append(getWhoIsResponse(data[i][0]))
         generalTab.append(whoisdata)
 
-    pureData = []
-    for i in range(len(generalTab)):
-        pureData.append([(generalTab[i][0][0].split(":")[2].strip(" ")), generalTab[i][0][2:4]])
+    finalData = []
 
-    for i in range(len(pureData)):
-        print("".join(str(pureData[i])))
+    for i in range(len(generalTab)):
+        finalData.append([(generalTab[i][0][0].split(":")[2].strip(" ")), generalTab[i][0][2:4]])
+
+    for i in range(len(finalData)):
+        print("".join(str(finalData[i])))
 
 
 __main__()
