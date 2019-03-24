@@ -5,9 +5,11 @@ import re
 import concurrent.futures
 import sys
 
+
 def make_request(domainName):
     url = domainName.strip("\n")
     requestResult = requests.head(url)
+
     print("[*]{} -> response code: {}\n".format(url, requestResult.status_code))
     return url, requestResult.status_code
 
@@ -21,11 +23,12 @@ def getWhoIsResponse(data):
     # Request
     ss = requests.get("https://who.is/whois/{}".format(rightUrl.strip("\n")))
     soup = BeautifulSoup(ss.text, "html.parser")
-    tag = str(soup.find_all("pre"))
+    xx = soup.pre.text
+    resul = xx.split("\n")
 
-    whoIsData = tag.split("\r\n")
+    return resul
 
-    return whoIsData
+    # tag = soup.find_all("pre")
 
 
 def start(function, data):
@@ -43,24 +46,35 @@ def start(function, data):
 
 
 def __main__():
-
     fileInputLink = open(sys.argv[1], "r").readlines()
+
     data = start(make_request, fileInputLink)
     generalTab = []
 
     for i in range(len(data)):
-        whoisdata = []
-        if data[i][1] == 200 or 301:
-            whoisdata.append(getWhoIsResponse(data[i][0]))
-        generalTab.append(whoisdata)
 
-    finalData = []
+        if data[i][1] == 200 or 301:
+            generalTab.append(getWhoIsResponse(data[i][0]))
+    import json
+
+    pos = 0
+    finalData = {}
 
     for i in range(len(generalTab)):
-        finalData.append([(generalTab[i][0][0].split(":")[2].strip(" ")), generalTab[i][0][2:4]])
 
-    for i in range(len(finalData)):
-        print("".join(str(finalData[i])))
+        for j in range(len(generalTab[i])):
+            if generalTab[i][j].find("REGISTRAR:") == 0:
+                pos = j
+
+                entity = generalTab[i][pos + 1].repgilace(" ", "")
+                key = generalTab[i][0].replace(" ", "")
+
+                finalData[key.strip("\r")] = entity.strip("\r")
+
+    print(finalData)
+
+    with open("whois.json", "w") as outfile:
+        json.dump(finalData, outfile)
 
 
 __main__()
